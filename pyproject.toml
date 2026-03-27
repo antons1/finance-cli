@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "finance-cli"
+version = "0.1.0"
+description = "CLI for fetching personal financial data from bank APIs"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.0",
+    "requests>=2.28",
+    "cryptography>=44.0",
+]
+
+[project.scripts]
+finance = "finance.cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/finance"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
