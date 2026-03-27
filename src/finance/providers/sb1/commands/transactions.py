@@ -3,6 +3,7 @@
 import json
 import sys
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 import click
 
@@ -73,7 +74,8 @@ def transaction_details(transaction_id: str):
     """Get details for a specific transaction."""
     try:
         client = get_client()
-        data = client.get(f"/personal/banking/transactions/{transaction_id}/details")
+        encoded_id = quote(transaction_id, safe="")
+        data = client.get(f"/personal/banking/transactions/{encoded_id}/details")
         click.echo(json.dumps(data, indent=2, ensure_ascii=False))
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)
@@ -82,15 +84,19 @@ def transaction_details(transaction_id: str):
 
 @transactions.command("export")
 @click.option("--account-key", required=True, help="Account key from 'accounts list'")
-def export_transactions(account_key: str):
-    """Export transactions (CSV)."""
+@click.option("--from", "from_date", required=True, help="Start date (YYYY-MM-DD)")
+@click.option("--to", "to_date", required=True, help="End date (YYYY-MM-DD)")
+def export_transactions(account_key: str, from_date: str, to_date: str):
+    """Export transactions as CSV."""
     try:
         client = get_client()
         data = client.get(
             "/personal/banking/transactions/export",
-            params={"accountKey": account_key},
+            params={"accountKey": account_key, "fromDate": from_date, "toDate": to_date},
+            accept="application/csv;charset=UTF-8",
+            raw=True,
         )
-        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        click.echo(data)
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)
         sys.exit(1)

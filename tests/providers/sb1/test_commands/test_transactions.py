@@ -112,7 +112,14 @@ class TestTransactionsDetails:
 
 class TestTransactionsExport:
     def test_calls_export_endpoint(self, runner, mock_client):
-        mock_client.get.return_value = {"export": "csv-data"}
-        runner.invoke(cli, ["transactions", "export", "--account-key", "acc-1"])
+        mock_client.get.return_value = "Dato;Beskrivelse;Inn;Ut\n"
+        result = runner.invoke(cli, ["transactions", "export", "--account-key", "acc-1", "--from", "2026-03-01", "--to", "2026-03-27"])
+        assert result.exit_code == 0
         call_args = mock_client.get.call_args
         assert "export" in call_args.args[0]
+        assert call_args.kwargs["accept"] == "application/csv;charset=UTF-8"
+        assert call_args.kwargs["params"]["fromDate"] == "2026-03-01"
+
+    def test_export_requires_dates(self, runner, mock_client):
+        result = runner.invoke(cli, ["transactions", "export", "--account-key", "acc-1"])
+        assert result.exit_code != 0

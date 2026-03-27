@@ -21,16 +21,19 @@ class Sb1Client:
             return ACCEPT_HEADERS["accounts"]
         return ACCEPT_HEADERS["default"]
 
-    def _request(self, method: str, path: str, retry_on_401: bool = True, **kwargs) -> dict:
+    def _request(
+        self, method: str, path: str, retry_on_401: bool = True, accept: str | None = None, raw: bool = False, **kwargs
+    ) -> dict | str:
         """Make an authenticated API request.
 
         Handles token refresh on 401, rate limiting on 429, and error responses.
+        Set raw=True to return response text instead of parsed JSON.
         """
         token = self._auth.ensure_access_token()
 
         headers = {
             "Authorization": f"Bearer {token}",
-            "Accept": self._accept_header(path),
+            "Accept": accept or self._accept_header(path),
         }
         if method in ("POST", "PUT", "PATCH"):
             headers["Content-Type"] = ACCEPT_HEADERS["default"]
@@ -46,7 +49,7 @@ class Sb1Client:
 
         if response.status_code == 401 and retry_on_401:
             self._auth.refresh_access_token()
-            return self._request(method, path, retry_on_401=False, **kwargs)
+            return self._request(method, path, retry_on_401=False, accept=accept, raw=raw, **kwargs)
 
         if response.status_code == 429:
             retry_after = response.headers.get("Retry-After")
@@ -59,9 +62,11 @@ class Sb1Client:
                 body = response.text
             raise ApiError(response.status_code, body)
 
+        if raw:
+            return response.text
         return response.json()
 
-    def get(self, path: str, **kwargs) -> dict:
+    def get(self, path: str, **kwargs) -> dict | str:
         """GET request."""
         return self._request("GET", path, **kwargs)
 
