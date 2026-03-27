@@ -6,7 +6,7 @@ import time
 
 import click
 
-from finance.config import CONFIG_DIR
+from finance.config import CONFIG_DIR, DEFAULT_BANK
 from finance.exceptions import FinanceError
 from finance.providers.sb1.auth import Sb1Auth
 from finance.token_store import TokenStore
@@ -30,14 +30,14 @@ def setup():
 
 
 @auth.command("login")
-@click.option("--bank", default=None, help="Bank ID (e.g. fid-smn). Omit for bank picker.")
+@click.option("--bank", default=DEFAULT_BANK, help="Bank ID (default: fid-ostlandet). Use 'none' for bank picker.")
 @click.option("--headless", is_flag=True, help="Use paste-flow (for headless/SSH environments).")
 def login(bank: str | None, headless: bool):
     """Authenticate with BankID via OAuth2."""
     try:
         store = TokenStore(config_dir=CONFIG_DIR)
         sb1_auth = Sb1Auth(store)
-        sb1_auth.login(bank=bank, headless=headless)
+        sb1_auth.login(bank=bank if bank != "none" else None, headless=headless)
         click.echo(json.dumps({"status": "authenticated"}), err=True)
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)

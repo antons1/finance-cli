@@ -11,6 +11,9 @@ TOKEN_URL = f"{API_BASE_URL}/oauth/token"
 CALLBACK_PORT = 11737
 REDIRECT_URI = f"http://localhost:{CALLBACK_PORT}/callback"
 
+# Default bank
+DEFAULT_BANK = "fid-ostlandet"
+
 # Token storage
 CONFIG_DIR = Path.home() / ".config" / "finance"
 TOKENS_FILE = CONFIG_DIR / "tokens.enc"
