@@ -53,8 +53,8 @@ def list_accounts(ctx):
             for a in data.get("accounts", [])
         ]
         _output(ctx, result,
-                columns=["name", "accountNumber", "balance", "availableBalance", "currency", "owner"],
-                headers={"accountNumber": "Account", "availableBalance": "Available", "balance": "Balance", "name": "Name", "currency": "Cur", "owner": "Owner"})
+                columns=["key", "name", "accountNumber", "balance", "availableBalance", "currency", "owner"],
+                headers={"key": "Key", "accountNumber": "Account", "availableBalance": "Available", "balance": "Balance", "name": "Name", "currency": "Cur", "owner": "Owner"})
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)
         sys.exit(1)

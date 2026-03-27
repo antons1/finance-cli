@@ -74,8 +74,8 @@ def list_transactions(ctx, account_key: str, from_date: str | None, to_date: str
             for t in data.get("transactions", [])
         ]
         _output(ctx, result,
-                columns=["date", "description", "amount", "currency", "type", "remoteAccountName"],
-                headers={"date": "Date", "description": "Description", "amount": "Amount", "currency": "Cur", "type": "Type", "remoteAccountName": "Counterparty"})
+                columns=["date", "description", "amount", "currency", "type", "remoteAccountName", "id"],
+                headers={"date": "Date", "description": "Description", "amount": "Amount", "currency": "Cur", "type": "Type", "remoteAccountName": "Counterparty", "id": "ID"})
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)
         sys.exit(1)
