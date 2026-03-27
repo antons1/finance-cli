@@ -22,14 +22,16 @@ finance auth logout          # Clear all tokens
 
 ### Accounts & Transactions
 ```bash
-finance accounts list                              # List all accounts (JSON)
-finance accounts get ACCOUNT_KEY                   # Get single account
-finance accounts balance                           # Balance summary
-finance transactions list --account-key KEY        # List transactions
-finance transactions list --account-key KEY --from 2026-01-01 --to 2026-03-01
-finance transactions details TRANSACTION_ID        # Transaction details
-finance transactions export --account-key KEY      # Export (CSV)
+finance --json accounts list                              # List all accounts (JSON)
+finance --json accounts get ACCOUNT_KEY                   # Get single account
+finance --json accounts balance                           # Balance summary
+finance --json transactions list --account-key KEY        # List transactions
+finance --json transactions list --account-key KEY --from 2026-01-01 --to 2026-03-01
+finance --json transactions details TRANSACTION_ID        # Transaction details
+finance transactions export --account-key KEY --from 2026-01-01 --to 2026-03-01  # Export (CSV)
 ```
+
+Note: `--json` is required for all data commands. Export always outputs CSV.
 
 ## Security
 - Tokens and credentials are encrypted on disk (`~/.config/finance/tokens.enc`) using Fernet (AES-128-CBC)

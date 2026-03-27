@@ -17,14 +17,25 @@ def get_client() -> Sb1Client:
     return Sb1Client(store)
 
 
+def _require_json(ctx: click.Context) -> None:
+    """Require --json flag until human-readable format is implemented."""
+    if not ctx.obj.get("json"):
+        click.echo("Error: --json flag is required. Human-readable format is not yet implemented.", err=True)
+        click.echo("Usage: finance --json accounts list", err=True)
+        sys.exit(1)
+
+
 @click.group()
-def accounts():
+@click.pass_context
+def accounts(ctx):
     """Bank account operations."""
 
 
 @accounts.command("list")
-def list_accounts():
+@click.pass_context
+def list_accounts(ctx):
     """List all bank accounts."""
+    _require_json(ctx)
     try:
         client = get_client()
         data = client.get("/personal/banking/accounts")
@@ -49,8 +60,10 @@ def list_accounts():
 
 @accounts.command("get")
 @click.argument("account_key")
-def get_account(account_key: str):
+@click.pass_context
+def get_account(ctx, account_key: str):
     """Get details for a specific account."""
+    _require_json(ctx)
     try:
         client = get_client()
         data = client.get(f"/personal/banking/accounts/{account_key}")
@@ -61,8 +74,10 @@ def get_account(account_key: str):
 
 
 @accounts.command("balance")
-def balance():
+@click.pass_context
+def balance(ctx):
     """Show balance summary for all accounts."""
+    _require_json(ctx)
     try:
         client = get_client()
         data = client.get("/personal/banking/accounts")

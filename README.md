@@ -31,16 +31,18 @@ finance auth login --headless   # Prints URL, you paste the redirect back (for S
 
 ## Usage
 
+The `--json` flag is currently required for all data commands. Human-readable table output will be the default in a future release.
+
 ```bash
 # Accounts
-finance accounts list
-finance accounts get ACCOUNT_KEY
-finance accounts balance
+finance --json accounts list
+finance --json accounts get ACCOUNT_KEY
+finance --json accounts balance
 
 # Transactions
-finance transactions list --account-key KEY
-finance transactions list --account-key KEY --from 2026-01-01 --to 2026-03-01
-finance transactions details TRANSACTION_ID
+finance --json transactions list --account-key KEY
+finance --json transactions list --account-key KEY --from 2026-01-01 --to 2026-03-01
+finance --json transactions details TRANSACTION_ID
 finance transactions export --account-key KEY --from 2026-01-01 --to 2026-03-01
 finance transactions export --account-key KEY --from 2026-01-01 --to 2026-03-01 --fields DATE,DESCRIPTION,IN,OUT
 
@@ -49,7 +51,7 @@ finance auth status
 finance auth logout
 ```
 
-All commands output JSON to stdout (except `export`, which outputs CSV). Errors go to stderr with exit code 1.
+Data commands output JSON to stdout when `--json` is passed. `export` always outputs CSV. Errors go to stderr with exit code 1.
 
 ### Export fields
 
@@ -79,7 +81,7 @@ The refresh token is valid for up to 365 days — no re-authentication needed un
 ### Cron example
 
 ```cron
-0 */6 * * * /path/to/finance accounts balance >> /var/log/finance.log 2>&1
+0 */6 * * * /path/to/finance --json accounts balance >> /var/log/finance.log 2>&1
 ```
 
 ## Security

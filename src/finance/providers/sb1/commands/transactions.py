@@ -19,6 +19,14 @@ def get_client() -> Sb1Client:
     return Sb1Client(store)
 
 
+def _require_json(ctx: click.Context) -> None:
+    """Require --json flag until human-readable format is implemented."""
+    if not ctx.obj.get("json"):
+        click.echo("Error: --json flag is required. Human-readable format is not yet implemented.", err=True)
+        click.echo("Usage: finance --json transactions list --account-key KEY", err=True)
+        sys.exit(1)
+
+
 def _epoch_ms_to_date(epoch_ms: int | None) -> str | None:
     """Convert epoch milliseconds to YYYY-MM-DD string."""
     if epoch_ms is None:
@@ -27,7 +35,8 @@ def _epoch_ms_to_date(epoch_ms: int | None) -> str | None:
 
 
 @click.group()
-def transactions():
+@click.pass_context
+def transactions(ctx):
     """Transaction operations."""
 
 
@@ -35,8 +44,10 @@ def transactions():
 @click.option("--account-key", required=True, help="Account key from 'accounts list'")
 @click.option("--from", "from_date", default=None, help="Start date (YYYY-MM-DD)")
 @click.option("--to", "to_date", default=None, help="End date (YYYY-MM-DD)")
-def list_transactions(account_key: str, from_date: str | None, to_date: str | None):
+@click.pass_context
+def list_transactions(ctx, account_key: str, from_date: str | None, to_date: str | None):
     """List transactions for an account."""
+    _require_json(ctx)
     try:
         client = get_client()
         params = {"accountKey": account_key}
@@ -70,8 +81,10 @@ def list_transactions(account_key: str, from_date: str | None, to_date: str | No
 
 @transactions.command("details")
 @click.argument("transaction_id")
-def transaction_details(transaction_id: str):
+@click.pass_context
+def transaction_details(ctx, transaction_id: str):
     """Get details for a specific transaction."""
+    _require_json(ctx)
     try:
         client = get_client()
         encoded_id = quote(transaction_id, safe="")

@@ -55,14 +55,14 @@ def mock_client():
 class TestAccountsList:
     def test_outputs_json_array(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS
-        result = runner.invoke(cli, ["accounts", "list"])
+        result = runner.invoke(cli, ["--json", "accounts", "list"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert len(data) == 2
 
     def test_includes_account_details(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS
-        result = runner.invoke(cli, ["accounts", "list"])
+        result = runner.invoke(cli, ["--json", "accounts", "list"])
         data = json.loads(result.output)
         assert data[0]["name"] == "Brukskonto"
         assert data[0]["accountNumber"] == "12345678901"
@@ -72,28 +72,28 @@ class TestAccountsList:
 
     def test_calls_correct_endpoint(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS
-        runner.invoke(cli, ["accounts", "list"])
+        runner.invoke(cli, ["--json", "accounts", "list"])
         mock_client.get.assert_called_once_with("/personal/banking/accounts")
 
 
 class TestAccountsGet:
     def test_outputs_single_account(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS["accounts"][0]
-        result = runner.invoke(cli, ["accounts", "get", "acc-1"])
+        result = runner.invoke(cli, ["--json", "accounts", "get", "acc-1"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["name"] == "Brukskonto"
 
     def test_calls_correct_endpoint(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS["accounts"][0]
-        runner.invoke(cli, ["accounts", "get", "acc-1"])
+        runner.invoke(cli, ["--json", "accounts", "get", "acc-1"])
         mock_client.get.assert_called_once_with("/personal/banking/accounts/acc-1")
 
 
 class TestAccountsBalance:
     def test_outputs_balance_summary(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS
-        result = runner.invoke(cli, ["accounts", "balance"])
+        result = runner.invoke(cli, ["--json", "accounts", "balance"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert len(data) == 2
@@ -101,15 +101,22 @@ class TestAccountsBalance:
         assert data[1]["balance"] == 250000.00
 
 
+class TestJsonRequired:
+    def test_list_without_json_flag_fails(self, runner, mock_client):
+        result = runner.invoke(cli, ["accounts", "list"])
+        assert result.exit_code == 1
+        assert "--json" in result.stderr or "--json" in result.output
+
+
 class TestErrorCases:
     def test_api_error_returns_exit_code_1(self, runner, mock_client):
         from finance.exceptions import ApiError
         mock_client.get.side_effect = ApiError(500, "Internal error")
-        result = runner.invoke(cli, ["accounts", "list"])
+        result = runner.invoke(cli, ["--json", "accounts", "list"])
         assert result.exit_code == 1
 
     def test_auth_error_returns_exit_code_1(self, runner, mock_client):
         from finance.exceptions import AuthError
         mock_client.get.side_effect = AuthError("Not authenticated")
-        result = runner.invoke(cli, ["accounts", "list"])
+        result = runner.invoke(cli, ["--json", "accounts", "list"])
         assert result.exit_code == 1

@@ -72,14 +72,14 @@ def mock_client():
 class TestTransactionsList:
     def test_outputs_json_array(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_TRANSACTIONS
-        result = runner.invoke(cli, ["transactions", "list", "--account-key", "acc-1"])
+        result = runner.invoke(cli, ["--json", "transactions", "list", "--account-key", "acc-1"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert len(data) == 2
 
     def test_includes_transaction_details(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_TRANSACTIONS
-        result = runner.invoke(cli, ["transactions", "list", "--account-key", "acc-1"])
+        result = runner.invoke(cli, ["--json", "transactions", "list", "--account-key", "acc-1"])
         data = json.loads(result.output)
         assert data[0]["description"] == "REMA 1000 MIDTBYEN"
         assert data[0]["amount"] == -150
@@ -93,7 +93,7 @@ class TestTransactionsList:
 
     def test_calls_correct_endpoint_with_params(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_TRANSACTIONS
-        runner.invoke(cli, ["transactions", "list", "--account-key", "acc-1"])
+        runner.invoke(cli, ["--json", "transactions", "list", "--account-key", "acc-1"])
         mock_client.get.assert_called_once()
         call_kwargs = mock_client.get.call_args
         assert "/personal/banking/transactions" in call_kwargs.args[0]
@@ -104,7 +104,7 @@ class TestTransactionsDetails:
     def test_outputs_raw_response(self, runner, mock_client):
         detail = {"id": "tx-1", "description": "REMA", "fullDescription": "REMA 1000 MIDTBYEN 7011"}
         mock_client.get.return_value = detail
-        result = runner.invoke(cli, ["transactions", "details", "tx-1"])
+        result = runner.invoke(cli, ["--json", "transactions", "details", "tx-1"])
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["fullDescription"] == "REMA 1000 MIDTBYEN 7011"

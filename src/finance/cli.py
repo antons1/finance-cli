@@ -8,8 +8,12 @@ from finance.providers.sb1.commands.transactions import transactions
 
 
 @click.group()
-def cli():
+@click.option("--json", "use_json", is_flag=True, help="Output in JSON format (required until human-readable format is implemented).")
+@click.pass_context
+def cli(ctx, use_json: bool):
     """Fetch personal financial data from bank APIs."""
+    ctx.ensure_object(dict)
+    ctx.obj["json"] = use_json
 
 
 cli.add_command(auth)
