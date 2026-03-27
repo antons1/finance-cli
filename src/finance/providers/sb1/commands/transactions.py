@@ -2,6 +2,7 @@
 
 import json
 import sys
+from datetime import datetime, timezone
 
 import click
 
@@ -15,6 +16,13 @@ def get_client() -> Sb1Client:
     """Create an authenticated Sb1Client."""
     store = TokenStore(config_dir=CONFIG_DIR)
     return Sb1Client(store)
+
+
+def _epoch_ms_to_date(epoch_ms: int | None) -> str | None:
+    """Convert epoch milliseconds to YYYY-MM-DD string."""
+    if epoch_ms is None:
+        return None
+    return datetime.fromtimestamp(epoch_ms / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
 
 
 @click.group()
@@ -40,11 +48,16 @@ def list_transactions(account_key: str, from_date: str | None, to_date: str | No
         result = [
             {
                 "id": t.get("id"),
-                "date": t.get("accountingDate"),
+                "date": _epoch_ms_to_date(t.get("date")),
                 "description": t.get("description"),
-                "amount": t["amount"]["amount"],
-                "currency": t["amount"]["currencyCode"],
-                "type": t.get("transactionType"),
+                "cleanedDescription": t.get("cleanedDescription"),
+                "amount": t.get("amount"),
+                "currency": t.get("currencyCode"),
+                "type": t.get("typeText"),
+                "typeCode": t.get("typeCode"),
+                "remoteAccount": t.get("remoteAccountNumber"),
+                "remoteAccountName": t.get("remoteAccountName"),
+                "bookingStatus": t.get("bookingStatus"),
             }
             for t in data.get("transactions", [])
         ]

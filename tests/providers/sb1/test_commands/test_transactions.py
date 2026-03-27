@@ -1,4 +1,4 @@
-"""Tests for transaction CLI commands — written before implementation."""
+"""Tests for transaction CLI commands."""
 
 import json
 from unittest.mock import MagicMock, patch
@@ -11,30 +11,48 @@ from finance.cli import cli
 SAMPLE_TRANSACTIONS = {
     "transactions": [
         {
-            "id": "tx-1",
-            "amount": {"amount": -150.00, "currencyCode": "NOK"},
-            "accountingDate": "2026-03-25",
+            "id": "tx-1-long-id",
+            "nonUniqueId": "722041731687042571",
             "description": "REMA 1000 MIDTBYEN",
-            "transactionType": "Varekjop",
+            "cleanedDescription": "REMA 1000 MIDTBYEN",
+            "accountNumber": {"value": "18138922606", "formatted": "1813 89 22606", "unformatted": "18138922606"},
+            "remoteAccountNumber": "60050608460",
+            "remoteAccountName": "Rema 1000",
+            "amount": -150,
+            "date": 1774393200000,  # epoch ms
+            "typeCode": "R_156",
+            "typeText": "Varekjøp",
+            "currencyCode": "NOK",
+            "canShowDetails": True,
+            "source": "HISTORIC",
+            "isConfidential": False,
+            "bookingStatus": "BOOKED",
+            "accountName": "Regningskonto",
+            "accountKey": "acc-1",
+            "accountCurrency": "NOK",
+            "isFromCurrencyAccount": False,
         },
         {
-            "id": "tx-2",
-            "amount": {"amount": -89.00, "currencyCode": "NOK"},
-            "accountingDate": "2026-03-24",
+            "id": "tx-2-long-id",
+            "nonUniqueId": "524402095889632571",
             "description": "SPOTIFY",
-            "transactionType": "Varekjop",
+            "cleanedDescription": "SPOTIFY",
+            "accountNumber": {"value": "18138922606", "formatted": "1813 89 22606", "unformatted": "18138922606"},
+            "amount": -89,
+            "date": 1774306800000,
+            "typeCode": "R_714",
+            "typeText": "Visa/Mastercard",
+            "currencyCode": "NOK",
+            "canShowDetails": True,
+            "source": "HISTORIC",
+            "isConfidential": False,
+            "bookingStatus": "BOOKED",
+            "accountName": "Regningskonto",
+            "accountKey": "acc-1",
+            "accountCurrency": "NOK",
+            "isFromCurrencyAccount": False,
         },
     ]
-}
-
-SAMPLE_DETAIL = {
-    "id": "tx-1",
-    "amount": {"amount": -150.00, "currencyCode": "NOK"},
-    "accountingDate": "2026-03-25",
-    "description": "REMA 1000 MIDTBYEN",
-    "fullDescription": "REMA 1000 MIDTBYEN 7011 TRONDHEIM",
-    "transactionType": "Varekjop",
-    "archiveReference": "ref-123",
 }
 
 
@@ -64,8 +82,10 @@ class TestTransactionsList:
         result = runner.invoke(cli, ["transactions", "list", "--account-key", "acc-1"])
         data = json.loads(result.output)
         assert data[0]["description"] == "REMA 1000 MIDTBYEN"
-        assert data[0]["amount"] == -150.00
-        assert data[0]["date"] == "2026-03-25"
+        assert data[0]["amount"] == -150
+        assert data[0]["date"] == "2026-03-24"  # epoch 1774393200000 -> date
+        assert data[0]["type"] == "Varekjøp"
+        assert data[0]["remoteAccountName"] == "Rema 1000"
 
     def test_requires_account_key(self, runner, mock_client):
         result = runner.invoke(cli, ["transactions", "list"])
@@ -81,12 +101,13 @@ class TestTransactionsList:
 
 
 class TestTransactionsDetails:
-    def test_outputs_single_transaction(self, runner, mock_client):
-        mock_client.get.return_value = SAMPLE_DETAIL
+    def test_outputs_raw_response(self, runner, mock_client):
+        detail = {"id": "tx-1", "description": "REMA", "fullDescription": "REMA 1000 MIDTBYEN 7011"}
+        mock_client.get.return_value = detail
         result = runner.invoke(cli, ["transactions", "details", "tx-1"])
         assert result.exit_code == 0
         data = json.loads(result.output)
-        assert data["fullDescription"] == "REMA 1000 MIDTBYEN 7011 TRONDHEIM"
+        assert data["fullDescription"] == "REMA 1000 MIDTBYEN 7011"
 
 
 class TestTransactionsExport:
