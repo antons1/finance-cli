@@ -82,17 +82,24 @@ def transaction_details(transaction_id: str):
         sys.exit(1)
 
 
+EXPORT_FIELDS = ["DATE", "DESCRIPTION", "INTEREST_DATE", "IN", "OUT", "TO_ACCOUNT", "FROM_ACCOUNT", "CATEGORY", "SUBCATEGORY"]
+
+
 @transactions.command("export")
 @click.option("--account-key", required=True, help="Account key from 'accounts list'")
 @click.option("--from", "from_date", required=True, help="Start date (YYYY-MM-DD)")
 @click.option("--to", "to_date", required=True, help="End date (YYYY-MM-DD)")
-def export_transactions(account_key: str, from_date: str, to_date: str):
+@click.option("--fields", default=None, help=f"Comma-separated fields: {','.join(EXPORT_FIELDS)}")
+def export_transactions(account_key: str, from_date: str, to_date: str, fields: str | None):
     """Export transactions as CSV."""
     try:
         client = get_client()
+        params = {"accountKey": account_key, "fromDate": from_date, "toDate": to_date}
+        if fields:
+            params["fields"] = fields
         data = client.get(
             "/personal/banking/transactions/export",
-            params={"accountKey": account_key, "fromDate": from_date, "toDate": to_date},
+            params=params,
             accept="application/csv;charset=UTF-8",
             raw=True,
         )
