@@ -12,6 +12,9 @@ build/
 tokens.enc
 key
 
+# Claude Code
+.claude/
+
 # IDE
 .vscode/
 .idea/
