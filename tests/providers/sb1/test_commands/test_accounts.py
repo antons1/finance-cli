@@ -101,11 +101,22 @@ class TestAccountsBalance:
         assert data[1]["balance"] == 250000.00
 
 
-class TestJsonRequired:
-    def test_list_without_json_flag_fails(self, runner, mock_client):
+class TestTableOutput:
+    def test_list_without_json_outputs_table(self, runner, mock_client):
+        mock_client.get.return_value = SAMPLE_ACCOUNTS
         result = runner.invoke(cli, ["accounts", "list"])
-        assert result.exit_code == 1
-        assert "--json" in result.stderr or "--json" in result.output
+        assert result.exit_code == 0
+        # Should contain header and data, not JSON brackets
+        assert "[" not in result.output
+        assert "Brukskonto" in result.output
+        assert "Sparekonto" in result.output
+
+    def test_balance_without_json_outputs_table(self, runner, mock_client):
+        mock_client.get.return_value = SAMPLE_ACCOUNTS
+        result = runner.invoke(cli, ["accounts", "balance"])
+        assert result.exit_code == 0
+        assert "15000.50" in result.output
+        assert "250000.00" in result.output
 
 
 class TestErrorCases:

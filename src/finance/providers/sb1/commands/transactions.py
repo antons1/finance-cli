@@ -8,6 +8,7 @@ from urllib.parse import quote
 import click
 
 from finance.exceptions import FinanceError
+from finance.formatting import format_table
 from finance.providers.sb1.client import Sb1Client
 from finance.token_store import TokenStore
 from finance.config import CONFIG_DIR
@@ -19,12 +20,12 @@ def get_client() -> Sb1Client:
     return Sb1Client(store)
 
 
-def _require_json(ctx: click.Context) -> None:
-    """Require --json flag until human-readable format is implemented."""
-    if not ctx.obj.get("json"):
-        click.echo("Error: --json flag is required. Human-readable format is not yet implemented.", err=True)
-        click.echo("Usage: finance --json transactions list --account-key KEY", err=True)
-        sys.exit(1)
+def _output(ctx: click.Context, rows: list[dict], columns: list[str] | None = None, headers: dict[str, str] | None = None) -> None:
+    """Output rows as JSON or table depending on --json flag."""
+    if ctx.obj.get("json"):
+        click.echo(json.dumps(rows, indent=2, ensure_ascii=False))
+    else:
+        click.echo(format_table(rows, columns=columns, headers=headers), nl=False)
 
 
 def _epoch_ms_to_date(epoch_ms: int | None) -> str | None:
@@ -47,7 +48,6 @@ def transactions(ctx):
 @click.pass_context
 def list_transactions(ctx, account_key: str, from_date: str | None, to_date: str | None):
     """List transactions for an account."""
-    _require_json(ctx)
     try:
         client = get_client()
         params = {"accountKey": account_key}
@@ -73,7 +73,9 @@ def list_transactions(ctx, account_key: str, from_date: str | None, to_date: str
             }
             for t in data.get("transactions", [])
         ]
-        click.echo(json.dumps(result, indent=2, ensure_ascii=False))
+        _output(ctx, result,
+                columns=["date", "description", "amount", "currency", "type", "remoteAccountName"],
+                headers={"date": "Date", "description": "Description", "amount": "Amount", "currency": "Cur", "type": "Type", "remoteAccountName": "Counterparty"})
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)
         sys.exit(1)
@@ -84,12 +86,16 @@ def list_transactions(ctx, account_key: str, from_date: str | None, to_date: str
 @click.pass_context
 def transaction_details(ctx, transaction_id: str):
     """Get details for a specific transaction."""
-    _require_json(ctx)
     try:
         client = get_client()
         encoded_id = quote(transaction_id, safe="")
         data = client.get(f"/personal/banking/transactions/{encoded_id}/details")
-        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        if ctx.obj.get("json"):
+            click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        else:
+            _output(ctx, [data],
+                    columns=["date", "description", "amount", "typeText", "remoteAccountNumber", "archiveReference"],
+                    headers={"date": "Date", "description": "Description", "amount": "Amount", "typeText": "Type", "remoteAccountNumber": "Remote Account", "archiveReference": "Reference"})
     except FinanceError as e:
         click.echo(json.dumps({"error": str(e)}), err=True)
         sys.exit(1)
