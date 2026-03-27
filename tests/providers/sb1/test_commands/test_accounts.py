@@ -1,32 +1,41 @@
-"""Tests for account CLI commands — written before implementation."""
+"""Tests for account CLI commands."""
 
 import json
-import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 
 from finance.cli import cli
-from finance.token_store import TokenStore
 
 SAMPLE_ACCOUNTS = {
     "accounts": [
         {
-            "id": "acc-1",
-            "accountNumber": {"value": "12345678901", "formatted": "1234 56 78901"},
+            "key": "acc-1",
+            "accountNumber": "12345678901",
+            "iban": "NO5512345678901",
             "name": "Brukskonto",
-            "balance": {"amount": 15000.50, "currencyCode": "NOK"},
-            "availableBalance": {"amount": 14500.00, "currencyCode": "NOK"},
+            "description": "BRUKSKONTO",
+            "balance": 15000.50,
+            "availableBalance": 14500.00,
+            "currencyCode": "NOK",
+            "owner": {"name": "Ola Nordmann", "firstName": "Ola", "lastName": "Nordmann", "type": "personal"},
+            "type": "USER",
         },
         {
-            "id": "acc-2",
-            "accountNumber": {"value": "98765432109", "formatted": "9876 54 32109"},
+            "key": "acc-2",
+            "accountNumber": "98765432109",
+            "iban": "NO7798765432109",
             "name": "Sparekonto",
-            "balance": {"amount": 250000.00, "currencyCode": "NOK"},
-            "availableBalance": {"amount": 250000.00, "currencyCode": "NOK"},
+            "description": "SPAREKONTO",
+            "balance": 250000.00,
+            "availableBalance": 250000.00,
+            "currencyCode": "NOK",
+            "owner": {"name": "Ola Nordmann", "firstName": "Ola", "lastName": "Nordmann", "type": "personal"},
+            "type": "SAVING",
         },
-    ]
+    ],
+    "errors": [],
 }
 
 
@@ -56,8 +65,10 @@ class TestAccountsList:
         result = runner.invoke(cli, ["accounts", "list"])
         data = json.loads(result.output)
         assert data[0]["name"] == "Brukskonto"
-        assert data[0]["accountNumber"] == "1234 56 78901"
+        assert data[0]["accountNumber"] == "12345678901"
         assert data[0]["balance"] == 15000.50
+        assert data[0]["key"] == "acc-1"
+        assert data[0]["owner"] == "Ola Nordmann"
 
     def test_calls_correct_endpoint(self, runner, mock_client):
         mock_client.get.return_value = SAMPLE_ACCOUNTS

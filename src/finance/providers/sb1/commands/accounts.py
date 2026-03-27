@@ -30,12 +30,14 @@ def list_accounts():
         data = client.get("/personal/banking/accounts")
         result = [
             {
-                "id": a["id"],
-                "accountNumber": a["accountNumber"]["formatted"],
+                "key": a["key"],
+                "accountNumber": a["accountNumber"],
                 "name": a["name"],
-                "balance": a["balance"]["amount"],
-                "currency": a["balance"]["currencyCode"],
-                "availableBalance": a["availableBalance"]["amount"],
+                "balance": a["balance"],
+                "availableBalance": a["availableBalance"],
+                "currency": a["currencyCode"],
+                "type": a.get("type"),
+                "owner": a.get("owner", {}).get("name"),
             }
             for a in data.get("accounts", [])
         ]
@@ -66,10 +68,11 @@ def balance():
         data = client.get("/personal/banking/accounts")
         result = [
             {
-                "accountNumber": a["accountNumber"]["formatted"],
+                "accountNumber": a["accountNumber"],
                 "name": a["name"],
-                "balance": a["balance"]["amount"],
-                "currency": a["balance"]["currencyCode"],
+                "balance": a["balance"],
+                "availableBalance": a["availableBalance"],
+                "currency": a["currencyCode"],
             }
             for a in data.get("accounts", [])
         ]
