@@ -4,10 +4,13 @@ Works on both macOS and Linux. Tokens are never stored in plaintext.
 """
 
 import json
+import logging
 import os
 import stat
 import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -30,6 +33,7 @@ class TokenStore:
         self._config_dir = config_dir
         self._key_file = config_dir / "key"
         self._tokens_file = config_dir / "tokens.enc"
+        self._cache: dict = {}
         self._fernet = self._load_or_create_key()
 
     def _load_or_create_key(self) -> Fernet:
@@ -52,22 +56,35 @@ class TokenStore:
         return Fernet(key)
 
     def _read_data(self) -> dict:
-        """Read and decrypt the token store. Returns empty dict on any failure."""
-        if not self._tokens_file.exists():
-            return {}
-        try:
-            encrypted = self._tokens_file.read_bytes()
-            decrypted = self._fernet.decrypt(encrypted)
-            return json.loads(decrypted)
-        except (InvalidToken, json.JSONDecodeError, Exception):
-            return {}
+        """Read and decrypt the token store, merged with in-memory cache.
+
+        Cache takes precedence so refreshed tokens survive write failures.
+        """
+        data: dict = {}
+        if self._tokens_file.exists():
+            try:
+                encrypted = self._tokens_file.read_bytes()
+                decrypted = self._fernet.decrypt(encrypted)
+                data = json.loads(decrypted)
+            except (InvalidToken, json.JSONDecodeError, Exception):
+                pass
+        data.update(self._cache)
+        return data
 
     def _write_data(self, data: dict) -> None:
-        """Encrypt and write the token store."""
-        payload = json.dumps(data).encode()
-        encrypted = self._fernet.encrypt(payload)
-        self._tokens_file.write_bytes(encrypted)
-        _set_file_permissions(self._tokens_file)
+        """Encrypt and write the token store. Updates the in-memory cache first.
+
+        If the disk write fails (e.g. read-only filesystem or sandbox restrictions),
+        the data remains available in-memory for the lifetime of this process.
+        """
+        self._cache = dict(data)
+        try:
+            payload = json.dumps(data).encode()
+            encrypted = self._fernet.encrypt(payload)
+            self._tokens_file.write_bytes(encrypted)
+            _set_file_permissions(self._tokens_file)
+        except OSError as e:
+            logger.warning("Could not persist tokens to disk (%s); tokens will be available in-memory only for this session.", e)
 
     def save(self, key: str, value: str) -> None:
         """Store a key-value pair."""
@@ -107,5 +124,6 @@ class TokenStore:
 
     def clear_all(self) -> None:
         """Remove all stored data."""
+        self._cache = {}
         if self._tokens_file.exists():
             self._tokens_file.unlink()

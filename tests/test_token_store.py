@@ -122,6 +122,42 @@ class TestTokenFilePermissions:
         assert mode == 0o600
 
 
+class TestWriteFailureFallback:
+    def test_data_available_in_memory_after_write_failure(self, store, tmp_path):
+        """Token saved to cache even when disk write fails."""
+        store.save("client_id", "id-before-failure")
+        # Make the tokens file read-only to force a write failure
+        tokens_file = tmp_path / "tokens.enc"
+        tokens_file.chmod(0o444)
+        try:
+            store.save("client_id", "id-after-failure")
+        except Exception:
+            pass  # write failure is swallowed
+        assert store.load("client_id") == "id-after-failure"
+        tokens_file.chmod(0o600)
+
+    def test_access_token_available_after_write_failure(self, store, tmp_path):
+        """Refreshed access token usable in-memory when disk write fails."""
+        expiry = time.time() + 300
+        store.save_token("access_token", "at-original", expiry)
+        tokens_file = tmp_path / "tokens.enc"
+        tokens_file.chmod(0o444)
+        try:
+            store.save_token("access_token", "at-refreshed", expiry)
+        except Exception:
+            pass
+        assert store.get_access_token() == "at-refreshed"
+        tokens_file.chmod(0o600)
+
+    def test_clear_all_also_clears_cache(self, store):
+        """clear_all wipes in-memory cache so cached tokens don't linger."""
+        expiry = time.time() + 300
+        store.save_token("access_token", "at-123", expiry)
+        store.clear_all()
+        assert store.get_access_token() is None
+        assert store.load("access_token") is None
+
+
 class TestCorruptData:
     def test_corrupt_tokens_file_returns_none(self, store, tmp_path):
         tokens_file = tmp_path / "tokens.enc"
