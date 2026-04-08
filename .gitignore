@@ -13,7 +13,8 @@ tokens.enc
 key
 
 # Claude Code
-.claude/
+.claude/*
+!.claude/skills/
 
 # IDE
 .vscode/
